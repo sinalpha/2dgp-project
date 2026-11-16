@@ -143,3 +143,118 @@ def remove_near(x, y):
         game_world.remove_object(best)
         redo_stack.clear()
         edited()
+
+
+def handle_events():
+    global mouse, angle, sel
+    for e in get_events():
+        if e.type == SDL_QUIT:
+            game_framework.quit()
+        elif e.type == SDL_MOUSEMOTION:
+            mouse = (e.x, H - 1 - e.y)
+        elif e.type == SDL_MOUSEWHEEL:
+            angle = (angle + 15 * (1 if e.y > 0 else -1)) % 180
+        elif e.type == SDL_MOUSEBUTTONDOWN:
+            mouse = (e.x, H - 1 - e.y)
+            if e.button == SDL_BUTTON_LEFT:
+                if hud.on_skip_button(*mouse):
+                    next_stage()
+                else:
+                    place(*mouse)
+            elif e.button == SDL_BUTTON_RIGHT:
+                remove_near(*mouse)
+        elif e.type == SDL_KEYDOWN:
+            k = e.key
+            if k == SDLK_ESCAPE:
+                game_framework.quit()
+            elif k == SDLK_p:
+                import pause_mode
+                game_framework.push_mode(pause_mode)
+            elif k == SDLK_k:
+                next_stage()
+            elif k == SDLK_r:
+                angle = (angle + 15) % 180
+            elif k == SDLK_SPACE:
+                fire()
+            elif k == SDLK_z and pieces():
+                undone = pieces()[-1]
+                game_world.remove_object(undone)
+                redo_stack.append(undone)
+                edited()
+            elif k == SDLK_y and redo_stack:
+                game_world.add_object(redo_stack.pop(), game_world.PIECES)
+                edited()
+            elif k == SDLK_x:
+                game_world.clear_layer(game_world.PIECES)
+                redo_stack.clear()
+                edited()
+            elif k in (SDLK_n, SDLK_RETURN):
+                if beam and beam.success:
+                    next_stage()
+            else:
+                for key, kind in hud.KIND_KEYS:
+                    if k == key and kind in stage()['inventory']:
+                        sel = kind
+
+
+# ---------------------------------------------------------------- 모드 인터페이스
+def init():
+    global total_attempts, stage_attempts
+    total_attempts = 0
+    stage_attempts = [0] * len(rl.STAGES)
+    load_stage(0)
+    _smoke['step'], _smoke['t'] = 0, get_time()
+
+
+def finish():
+    game_world.clear()
+
+
+def pause():
+    pass
+
+
+def resume():
+    pass
+
+
+def update():
+    global shoot_ch
+    if shoot_ch is not None and not sound.is_playing(shoot_ch):
+        shoot_ch = None
+        launch()
+    game_world.update()
+    board.reached = set(beam.result['reached']) if beam and beam.done else set()
+    if SMOKE_DIR:
+        smoke_test()
+
+
+def draw():
+    clear_canvas()
+    game_world.render()
+    draw_ghost()
+    hud.draw(sys.modules[__name__])
+    update_canvas()
+
+
+def draw_ghost():
+    """마우스 위치에 놓일 오브젝트 미리보기"""
+    if remaining(sel) <= 0:
+        return
+    mx, my = mouse
+    if blocked(stage(), mx, my):
+        draw_circle(mx, my, 10, *BLOCK_COLOR, 200)
+        thick_line(mx - 7, my - 7, mx + 7, my + 7, 2, BLOCK_COLOR)
+        thick_line(mx - 7, my + 7, mx + 7, my - 7, 2, BLOCK_COLOR)
+    else:
+        Piece(sel, round(mx / 10) * 10, round(my / 10) * 10, angle, ghost=True).draw()
+
+
+# ---------------------------------------------------------------- 자동 검증
+def screenshot(path):
+    mod = sys.modules['pico2d.pico2d']
+    surf = SDL_CreateRGBSurface(0, rl.W, H, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)
+    SDL_RenderReadPixels(mod.renderer, None, SDL_PIXELFORMAT_ARGB8888, surf.contents.pixels, surf.contents.pitch)
+    SDL_SaveBMP(surf, path.encode())
+    SDL_FreeSurface(surf)
+
