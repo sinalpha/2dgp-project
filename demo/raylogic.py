@@ -70,3 +70,13 @@ def _rot(d, deg):
     c, s = math.cos(r), math.sin(r)
     return (d[0] * c - d[1] * s, d[0] * s + d[1] * c)
 
+
+def get_targets(stage):
+    """목적지 목록. 스테이지는 'target'(1개) 또는 'targets'(여러 개)로 지정한다"""
+    return stage.get('targets') or [stage['target']]
+
+
+def get_sources(stage):
+    """광원 목록 [(x, y, angle)]. 'source'+'source_angle'(1개) 또는 'sources'(여러 개)"""
+    return stage.get('sources') or [(stage['source'][0], stage['source'][1], stage['source_angle'])]
+
