@@ -171,3 +171,28 @@ def trace(stage, placed):
     return {'paths': paths, 'ends': ends, 'hits': hits, 'success': success,
             'reached': sorted(tbest), 'best': best, 'total': total}
 
+
+# ---------------------------------------------------------------- 스테이지
+STAGES = [
+    {   # 1: 금속 판 한 장으로 꺾기
+        'name': '1. 첫 반사',
+        'source': (90, 120), 'source_angle': 0, 'target': (200, 500),
+        'walls': [(420, 40, 420, 300)],
+        'inventory': {'metal': 1},
+        'hint': '금속 판으로 빛을 위로 꺾어 보세요',
+    },
+    {   # 2: 벽을 돌아가기
+        'name': '2. 벽 너머로',
+        'source': (90, 320), 'source_angle': 0, 'target': (880, 300),
+        'walls': [(500, 120, 500, 420)],
+        'inventory': {'metal': 3},
+        'hint': '벽 위로 올라갔다가 내려오기',
+    },
+    {   # 3: 유리로 서서히 꺾기 (재질 수치 확인)
+        'name': '3. 유리와 에너지',
+        'source': (90, 100), 'source_angle': 0, 'target': (800, 458),
+        'walls': [(450, 0, 450, 420)],
+        'inventory': {'glass': 3, 'metal': 1},
+        'hint': '유리는 통과하며 25도씩 꺾입니다 (-10)',
+    },
+]
