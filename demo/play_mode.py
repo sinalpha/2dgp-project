@@ -258,3 +258,21 @@ def screenshot(path):
     SDL_SaveBMP(surf, path.encode())
     SDL_FreeSurface(surf)
 
+
+def smoke_test():
+    """해법을 자동 배치/발사하고 화면을 BMP 로 저장"""
+    now = get_time()
+    if _smoke['step'] % 2 == 0 and now - _smoke['t'] > 0.3:
+        game_world.clear_layer(game_world.PIECES)
+        game_world.add_objects([Piece(*o) for o in SMOKE_SOLUTIONS[stage_idx]], game_world.PIECES)
+        fire()
+        _smoke['step'], _smoke['t'] = _smoke['step'] + 1, now
+    elif _smoke['step'] % 2 == 1 and beam and beam.done and now - _smoke['t'] > 1.2:
+        draw()
+        screenshot(os.path.join(SMOKE_DIR, 'shot%d.bmp' % (stage_idx + 1)))
+        print('stage', stage_idx + 1, 'success', beam.result['success'], 'energy', beam.result['best'], flush=True)
+        if stage_idx + 1 >= len(rl.STAGES):
+            game_framework.quit()
+            return
+        load_stage(stage_idx + 1)
+        _smoke['step'], _smoke['t'] = _smoke['step'] + 1, now
