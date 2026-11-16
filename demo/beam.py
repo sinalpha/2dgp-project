@@ -1,5 +1,6 @@
 import math
 import game_framework
+import sound
 from pico2d import *
 from gfx import AMBER, BLOCK_COLOR, thick_line, font
 
@@ -12,6 +13,8 @@ class Beam:
     def __init__(self, result):
         self.result = result
         self.dist = 0.0
+        self.hit_idx = 0           # 다음에 소리 낼 재질 충돌
+        self.fail_played = False
 
     @property
     def done(self):
@@ -37,6 +40,17 @@ class Beam:
     def update(self):
         if not self.done:
             self.dist += BEAM_SPEED_PPS * game_framework.frame_time
+        # 빛이 재질에 닿은 순간 해당 재질 소리 (같은 프레임의 같은 재질은 한 번만)
+        hits, played = self.result['hits'], set()
+        while self.hit_idx < len(hits) and hits[self.hit_idx][0] <= self.dist:
+            kind = hits[self.hit_idx][1]
+            if kind not in played:
+                sound.play(kind)
+                played.add(kind)
+            self.hit_idx += 1
+        if self.done and not self.result['success'] and not self.fail_played:
+            self.fail_played = True
+            sound.play('fail')
 
     def draw(self):
         D = self.dist
